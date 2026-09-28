@@ -1,5 +1,6 @@
 import pygame
 import random
+import math
 
 pygame.init()
 
@@ -11,17 +12,14 @@ clock = pygame.time.Clock()
 
 class Human:
     def __init__(self):
-        # Start at a random spot, moving in a random direction
         self.x = random.randint(0, WIDTH)
         self.y = random.randint(0, HEIGHT)
         self.dx = random.uniform(-2, 2)
         self.dy = random.uniform(-2, 2)
 
     def update(self):
-        # Move a little each frame
         self.x += self.dx
         self.y += self.dy
-        # Bounce off the edges of the screen
         if self.x < 0 or self.x > WIDTH:
             self.dx = -self.dx
         if self.y < 0 or self.y > HEIGHT:
@@ -31,7 +29,35 @@ class Human:
         pygame.draw.circle(screen, (0, 200, 255), (int(self.x), int(self.y)), 6)
 
 
+class Zombie:
+    def __init__(self):
+        self.x = random.randint(0, WIDTH)
+        self.y = random.randint(0, HEIGHT)
+        self.speed = 1.5
+
+    def update(self, humans):
+        # Find the closest human
+        closest = None
+        closest_dist = float("inf")
+        for h in humans:
+            d = math.hypot(h.x - self.x, h.y - self.y)
+            if d < closest_dist:
+                closest = h
+                closest_dist = d
+
+        # Move toward that human
+        if closest is not None and closest_dist > 0:
+            dx = closest.x - self.x
+            dy = closest.y - self.y
+            self.x += dx / closest_dist * self.speed
+            self.y += dy / closest_dist * self.speed
+
+    def draw(self):
+        pygame.draw.circle(screen, (80, 220, 80), (int(self.x), int(self.y)), 7)
+
+
 humans = [Human() for _ in range(20)]
+zombies = [Zombie() for _ in range(3)]
 
 running = True
 while running:
@@ -39,14 +65,18 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # UPDATE: every human moves
+    # UPDATE
     for h in humans:
         h.update()
+    for z in zombies:
+        z.update(humans)
 
-    # DRAW: every human is drawn
+    # DRAW
     screen.fill((30, 30, 30))
     for h in humans:
         h.draw()
+    for z in zombies:
+        z.draw()
     pygame.display.flip()
 
     clock.tick(60)
