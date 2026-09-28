@@ -8,6 +8,7 @@ WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Zombie Simulation")
 clock = pygame.time.Clock()
+font = pygame.font.SysFont(None, 28)
 
 
 class Human:
@@ -30,13 +31,13 @@ class Human:
 
 
 class Zombie:
-    def __init__(self):
-        self.x = random.randint(0, WIDTH)
-        self.y = random.randint(0, HEIGHT)
+    def __init__(self, x=None, y=None):
+        # If no position is given, start somewhere random
+        self.x = x if x is not None else random.randint(0, WIDTH)
+        self.y = y if y is not None else random.randint(0, HEIGHT)
         self.speed = 1.5
 
     def update(self, humans):
-        # Find the closest human
         closest = None
         closest_dist = float("inf")
         for h in humans:
@@ -45,7 +46,6 @@ class Zombie:
                 closest = h
                 closest_dist = d
 
-        # Move toward that human
         if closest is not None and closest_dist > 0:
             dx = closest.x - self.x
             dy = closest.y - self.y
@@ -65,11 +65,20 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # UPDATE
+    # UPDATE: movement
     for h in humans:
         h.update()
     for z in zombies:
         z.update(humans)
+
+    # UPDATE: infection
+    new_zombies = []
+    for z in zombies:
+        for h in humans[:]:
+            if math.hypot(h.x - z.x, h.y - z.y) < 13:
+                humans.remove(h)
+                new_zombies.append(Zombie(h.x, h.y))
+    zombies.extend(new_zombies)
 
     # DRAW
     screen.fill((30, 30, 30))
@@ -77,8 +86,11 @@ while running:
         h.draw()
     for z in zombies:
         z.draw()
-    pygame.display.flip()
 
+    counter = font.render(f"Humans: {len(humans)}   Zombies: {len(zombies)}", True, (255, 255, 255))
+    screen.blit(counter, (10, 10))
+
+    pygame.display.flip()
     clock.tick(60)
 
 pygame.quit()
