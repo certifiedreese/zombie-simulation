@@ -9,6 +9,12 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Zombie Simulation")
 clock = pygame.time.Clock()
 font = pygame.font.SysFont(None, 28)
+big_font = pygame.font.SysFont(None, 60)
+
+# Simulation settings
+NUM_HUMANS = 20
+NUM_ZOMBIES = 3
+FIGHT_CHANCE = 0.4  # 40% chance a human kills the zombie instead of being infected
 
 
 class Human:
@@ -32,7 +38,6 @@ class Human:
 
 class Zombie:
     def __init__(self, x=None, y=None):
-        # If no position is given, start somewhere random
         self.x = x if x is not None else random.randint(0, WIDTH)
         self.y = y if y is not None else random.randint(0, HEIGHT)
         self.speed = 1.5
@@ -56,14 +61,22 @@ class Zombie:
         pygame.draw.circle(screen, (80, 220, 80), (int(self.x), int(self.y)), 7)
 
 
-humans = [Human() for _ in range(20)]
-zombies = [Zombie() for _ in range(3)]
+def new_game():
+    humans = [Human() for _ in range(NUM_HUMANS)]
+    zombies = [Zombie() for _ in range(NUM_ZOMBIES)]
+    return humans, zombies
+
+
+humans, zombies = new_game()
 
 running = True
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        # Press R to restart
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+            humans, zombies = new_game()
 
     # UPDATE: movement
     for h in humans:
@@ -71,13 +84,22 @@ while running:
     for z in zombies:
         z.update(humans)
 
-    # UPDATE: infection
+    # UPDATE: fights
     new_zombies = []
+    dead_zombies = []
     for z in zombies:
         for h in humans[:]:
             if math.hypot(h.x - z.x, h.y - z.y) < 13:
-                humans.remove(h)
-                new_zombies.append(Zombie(h.x, h.y))
+                if random.random() < FIGHT_CHANCE:
+                    # Human wins: the zombie is destroyed
+                    dead_zombies.append(z)
+                    break
+                else:
+                    # Zombie wins: the human becomes a zombie
+                    humans.remove(h)
+                    new_zombies.append(Zombie(h.x, h.y))
+    for z in dead_zombies:
+        zombies.remove(z)
     zombies.extend(new_zombies)
 
     # DRAW
@@ -89,6 +111,18 @@ while running:
 
     counter = font.render(f"Humans: {len(humans)}   Zombies: {len(zombies)}", True, (255, 255, 255))
     screen.blit(counter, (10, 10))
+
+    # Show who won
+    message = None
+    if len(zombies) == 0:
+        message = "Humans survived!"
+    elif len(humans) == 0:
+        message = "Zombies took over!"
+    if message:
+        text = big_font.render(message, True, (255, 255, 255))
+        screen.blit(text, text.get_rect(center=(WIDTH // 2, HEIGHT // 2)))
+        hint = font.render("Press R to restart", True, (200, 200, 200))
+        screen.blit(hint, hint.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50)))
 
     pygame.display.flip()
     clock.tick(60)
