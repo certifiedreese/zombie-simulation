@@ -25,7 +25,7 @@ class Human:
         self.y = random.randint(0, HEIGHT)
         # Pick a random direction and a random speed separately
         angle = random.uniform(0, 2 * math.pi)
-        speed = random.uniform(0.5, 1.4)
+        speed = random.uniform(0.5, 4.0)
         self.dx = math.cos(angle) * speed
         self.dy = math.sin(angle) * speed
 
@@ -45,7 +45,7 @@ class Zombie:
     def __init__(self, x=None, y=None):
         self.x = x if x is not None else random.randint(0, WIDTH)
         self.y = y if y is not None else random.randint(0, HEIGHT)
-        self.speed = 1.5
+        self.speed = random.uniform(1.0, 2.5)
 
     def update(self, humans):
         closest = None
